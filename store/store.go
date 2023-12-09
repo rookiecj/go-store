@@ -15,6 +15,8 @@ type Store[S State] interface {
 	// Subscribe adds a subscriber to the store.
 	// subscribers are notified when the state changes.
 	Subscribe(subscriber Subscriber[S]) Store[S]
+
+	SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]) Store[S]
 }
 
 // State is value class
@@ -31,11 +33,16 @@ type Subscriber[S State] func(newState S, oldState S, action Action)
 type baseStore[S State] struct {
 	state       S
 	reducer     Reducer[S]
-	subscribers []Subscriber[S]
+	subscribers []subscriberEntry[S]
 	//lock         sync.RWMutex
 
 	age          int64
 	dispatchLock sync.Mutex
+}
+
+type subscriberEntry[S State] struct {
+	scheduler  Scheduler
+	subscriber Subscriber[S]
 }
 
 func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
@@ -69,26 +76,50 @@ func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
 	if b == nil {
 		return b
 	}
+	return b.SubscribeOn(Caller, subscriber)
+}
+
+func (b *baseStore[S]) SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]) Store[S] {
+	if b == nil {
+		return b
+	}
 
 	if len(b.subscribers) == 0 {
 		// onFirstSubscriber
+		b.onBeginSubscribe()
 	}
 
-	b.subscribers = append(b.subscribers, subscriber)
+	b.subscribers = append(b.subscribers, subscriberEntry[S]{
+		scheduler:  scheduler,
+		subscriber: subscriber})
 
 	// schedule the task on caller's context
 	b.dispatchLock.Lock()
-	b.doDispatchOn(nil, b.age, Immediate, subscriber, b.state, b.state, InitAction)
+	b.doDispatchOn(scheduler, nil, b.age, subscriber, b.state, b.state, InitAction)
 	b.dispatchLock.Unlock()
 	return b
 }
 
-func (b *baseStore[S]) reduce(oldState S, action Action) S {
+func (b *baseStore[S]) reduce(state S, action Action) S {
 	if b == nil {
-		return oldState
+		return state
 	}
-	// reduce on Main context
-	return b.reducer(oldState, action)
+
+	// reduce state on Main context
+	//return b.reducer(oldState, action)
+	return b.doReduceOn(Main, b.age, b.reducer, state, action)
+}
+
+func (b *baseStore[S]) doReduceOn(scheduler Scheduler, age int64, reducer Reducer[S], state S, action Action) (newState S) {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	reduceTask := NewReduceTask(age, reducer, state, action)
+	scheduler.Schedule(reduceTask, func() {
+		wg.Done()
+	})
+	wg.Wait()
+	newState = reduceTask.Result().(S)
+	return
 }
 
 func (b *baseStore[S]) dispatch(oldState S, action Action, newState S) error {
@@ -96,26 +127,32 @@ func (b *baseStore[S]) dispatch(oldState S, action Action, newState S) error {
 		return errors.New("store is nil")
 	}
 
-	// dispatch
+	// dispatch state in subscriber's context
 	b.dispatchLock.Lock()
-	clonedSubscribers := b.subscribers[:]
-	wg := sync.WaitGroup{}
-	age := atomic.AddInt64(&b.age, 1)
-	for _, subscriber := range clonedSubscribers {
-		b.doDispatchOn(&wg, age, Immediate, subscriber, newState, oldState, action)
+	if len(b.subscribers) > 0 {
+		clonedSubscribers := b.subscribers[:]
+		age := atomic.AddInt64(&b.age, 1)
+		wg := sync.WaitGroup{}
+		for _, entry := range clonedSubscribers {
+			b.doDispatchOn(entry.scheduler, &wg, age, entry.subscriber, newState, oldState, action)
+		}
+		wg.Wait()
 	}
-	wg.Wait()
 	b.dispatchLock.Unlock()
 	return nil
 }
 
-func (b *baseStore[S]) doDispatchOn(wg *sync.WaitGroup, age int64, scheduler Scheduler, subscriber Subscriber[S], newState S, oldState S, action Action) {
+func (b *baseStore[S]) doDispatchOn(scheduler Scheduler, wg *sync.WaitGroup, age int64, subscriber Subscriber[S], newState S, oldState S, action Action) {
 	if wg != nil {
 		wg.Add(1)
 	}
-	scheduler.Schedule(NewTask(age, subscriber, newState, oldState, action), func() {
+	scheduler.Schedule(NewDispatchTask(age, subscriber, newState, oldState, action), func() {
 		if wg != nil {
 			wg.Done()
 		}
 	})
+}
+
+func (b *baseStore[State]) onBeginSubscribe() {
+
 }

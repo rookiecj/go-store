@@ -14,6 +14,7 @@ type myState struct {
 type addAction struct {
 	value string
 }
+
 type setAction struct {
 	value string
 }
@@ -29,6 +30,7 @@ func (c *setAction) actionInterface() {}
 func newMyStateStore() Store[myState] {
 	return newMyStateStoreWithReducer(myStateReducer)
 }
+
 func newMyStateStoreWithReducer(reducer Reducer[myState]) Store[myState] {
 	return NewStore(myInitialState, reducer)
 }

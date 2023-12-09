@@ -1,6 +1,9 @@
 package store
 
-import "testing"
+import (
+	"log"
+	"testing"
+)
 
 func Test_baseStore_Subscribe(t *testing.T) {
 
@@ -57,11 +60,12 @@ func Test_baseStore_Subscribe(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			for idx := 0; idx < tt.args.subscribers; idx++ {
+				log.Println("Subscribe", idx)
 				tt.b.Subscribe(func(state myState, old myState, action Action) {
 					tt.called++
 				})
 			}
-
+			log.Println("Dispatch action", tt.args.action)
 			if tt.args.action != nil {
 				tt.b.Dispatch(tt.args.action)
 			}
