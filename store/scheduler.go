@@ -1,8 +1,8 @@
 package store
 
 var (
-	// Caller runs a task on that caller's context immediately
-	Caller = &callerScheduler{}
+	// Immediate runs a task on caller or dispatcher's context
+	Immediate = &immediateScheduler{}
 	// Main context
 	Main = &mainScheduler{}
 	// Background context
@@ -21,12 +21,12 @@ type Task interface {
 	Result() any
 }
 
-type callerScheduler struct{}
+type immediateScheduler struct{}
 type mainScheduler struct{}
 type backgroundScheduler struct{}
 
-func (c *callerScheduler) Schedule(task Task, onCompleted Callback) {
-	// run task on the caller's context
+func (c *immediateScheduler) Schedule(task Task, onCompleted Callback) {
+	// run task on the caller or dispatcher's context
 	task.Do()
 	if onCompleted != nil {
 		onCompleted()

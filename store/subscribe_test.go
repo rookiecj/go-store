@@ -70,8 +70,10 @@ func Test_baseStore_Subscribe(t *testing.T) {
 				tt.b.Dispatch(tt.args.action)
 			}
 
+			tt.b.waitForDispatch()
+
 			if tt.want != tt.called {
-				t.Errorf("Subscribe: want %d, got %d, state %v, action %v", tt.want, tt.called, tt.b.GetState(), tt.args.action)
+				t.Errorf("Subscribe: want %d, got %d, state %v, action %v", tt.want, tt.called, tt.b.getState(), tt.args.action)
 			}
 		})
 	}

@@ -10,7 +10,7 @@ build: ## build
 	go build ./store/...
 
 clean: 	## clean
-	@-rm store.test
+	-rm store.test
 
 test: clean ## test
 	go test -v -timeout=30s ./store/...

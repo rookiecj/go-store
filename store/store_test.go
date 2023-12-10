@@ -32,6 +32,8 @@ func newMyStateStore() Store[myState] {
 }
 
 func newMyStateStoreWithReducer(reducer Reducer[myState]) Store[myState] {
+	// test on Immediate scheduler
+	//return newStoreOn(Immediate, myInitialState, reducer)
 	return NewStore(myInitialState, reducer)
 }
 
@@ -85,7 +87,11 @@ func Test_Store_example(t *testing.T) {
 		store := NewStore[myState](initialState, reducer)
 
 		store.Subscribe(func(newState myState, oldState myState, action Action) {
-			fmt.Println(newState)
+			fmt.Println("subscriber1", newState)
+		})
+
+		store.Subscribe(func(newState myState, oldState myState, action Action) {
+			fmt.Println("subscriber2", newState)
 		})
 
 		store.Dispatch(&addAction{
@@ -97,6 +103,10 @@ func Test_Store_example(t *testing.T) {
 		store.Dispatch(&addAction{
 			value: "3",
 		})
+
+		// only for testing
+		// wait for dispatching
+		store.waitForDispatch()
 	})
 }
 
@@ -132,7 +142,9 @@ func Test_NewStore(t *testing.T) {
 			if wantRaw == nil || gotRaw == nil {
 				t.Errorf("NewStore() = %v, want %v", got, tt.want)
 			}
-
+			//if wantRaw.reduceScheduler != Main || gotRaw.reduceScheduler != Main {
+			//	t.Errorf("NewStore() = %v, want %v", got, tt.want)
+			//}
 			if !reflect.DeepEqual(wantRaw.state, gotRaw.state) {
 				t.Errorf("NewStore() = %v, want %v", got, tt.want)
 			}
@@ -149,7 +161,7 @@ func Test_NewStore(t *testing.T) {
 	}
 }
 
-func Test_baseStore_GetState(t *testing.T) {
+func Test_baseStore_getState(t *testing.T) {
 	type testCase[S State] struct {
 		name string
 		b    Store[S]
@@ -176,8 +188,8 @@ func Test_baseStore_GetState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.b.GetState(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetState() = %v, want %v", got, tt.want)
+			if got := tt.b.getState(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getState() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -186,7 +198,7 @@ func Test_baseStore_GetState(t *testing.T) {
 func Test_baseStore_Dispatch(t *testing.T) {
 
 	type args struct {
-		action Action
+		actions []Action
 	}
 	type testCase[S State] struct {
 		name string
@@ -199,7 +211,7 @@ func Test_baseStore_Dispatch(t *testing.T) {
 			name: "nil action",
 			b:    newMyStateStore(),
 			args: args{
-				action: nil,
+				actions: nil,
 			},
 			want: myInitialState,
 		},
@@ -207,7 +219,7 @@ func Test_baseStore_Dispatch(t *testing.T) {
 			name: "add action - empty",
 			b:    newMyStateStore(),
 			args: args{
-				action: &addAction{},
+				actions: []Action{&addAction{}},
 			},
 			want: myInitialState,
 		},
@@ -215,8 +227,8 @@ func Test_baseStore_Dispatch(t *testing.T) {
 			name: "add action - 123",
 			b:    newMyStateStore(),
 			args: args{
-				action: &addAction{
-					value: "123",
+				actions: []Action{
+					&addAction{"123"},
 				},
 			},
 			want: myState{
@@ -224,14 +236,32 @@ func Test_baseStore_Dispatch(t *testing.T) {
 				value: "123",
 			},
 		},
+		{
+			name: "add action - 123 - 456",
+			b:    newMyStateStore(),
+			args: args{
+				actions: []Action{
+					&addAction{"123"},
+					&addAction{"456"},
+				},
+			},
+			want: myState{
+				id:    0,
+				value: "123456",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.b.Dispatch(tt.args.action)
+			for _, action := range tt.args.actions {
+				tt.b.Dispatch(action)
+			}
+			tt.b.waitForDispatch()
+
 			want := tt.want
-			got := tt.b.GetState()
+			got := tt.b.getState()
 			if !reflect.DeepEqual(got, want) {
-				t.Errorf("Dispatch: want %v got %v, action %v", want, got, tt.args.action)
+				t.Errorf("Dispatch: want %v got %v, actions %v", want, got, tt.args.actions)
 			}
 		})
 	}
