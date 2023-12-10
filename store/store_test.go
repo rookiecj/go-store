@@ -23,9 +23,9 @@ var (
 	myInitialState = myState{}
 )
 
-func (c myState) stateInterface()     {}
-func (c *addAction) actionInterface() {}
-func (c *setAction) actionInterface() {}
+func (c myState) StateInterface()     {}
+func (c *addAction) ActionInterface() {}
+func (c *setAction) ActionInterface() {}
 
 func newMyStateStore() Store[myState] {
 	return newMyStateStoreWithReducer(myStateReducer)

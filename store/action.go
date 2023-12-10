@@ -2,7 +2,7 @@ package store
 
 // Action triggers a state change.
 type Action interface {
-	actionInterface()
+	ActionInterface()
 }
 
 var (
@@ -17,6 +17,6 @@ type ResetAction[S State] struct {
 	state S
 }
 
-func (c *initAction) actionInterface() {}
+func (c *initAction) ActionInterface() {}
 
-func (*ResetAction[S]) actionInterface() {}
+func (*ResetAction[S]) ActionInterface() {}

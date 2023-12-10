@@ -27,7 +27,7 @@ type Store[S State] interface {
 
 // State is value class
 type State interface {
-	stateInterface()
+	StateInterface()
 }
 
 // Reducer reduces the state of the application, it is called in Main context
