@@ -19,6 +19,7 @@ type Store[S State] interface {
 
 	// getState returns the current state of the store.
 	getState() S
+	// dispatchOn dispatches an action to the store on the scheduler.
 	dispatchOn(scheduler Scheduler, action Action)
 	// waitForDispatch waits for all dispatched actions to be processed.
 	waitForDispatch()
