@@ -19,8 +19,7 @@ type Store[S State] interface {
 
 	// getState returns the current state of the store.
 	getState() S
-	// dispatchOn dispatches an action to the store on the scheduler.
-	dispatchOn(scheduler Scheduler, action Action)
+	//dispatchOn(scheduler Scheduler, action Action)
 	// waitForDispatch waits for all dispatched actions to be processed.
 	waitForDispatch()
 }
@@ -41,7 +40,6 @@ type baseStore[S State] struct {
 	// reducer is called in Main context
 	reducer     Reducer[S]
 	subscribers []subscriberEntry[S]
-	//lock         sync.RWMutex
 
 	age          int64
 	dispatchLock sync.Mutex
@@ -59,7 +57,7 @@ func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
 	}
 }
 
-func (b *baseStore[State]) Dispatch(action Action) {
+func (b *baseStore[S]) Dispatch(action Action) {
 	if b == nil {
 		return
 	}
@@ -67,6 +65,7 @@ func (b *baseStore[State]) Dispatch(action Action) {
 	b.dispatchOn(Main, action)
 }
 
+// dispatchOn dispatches an action to the store on the scheduler.
 func (b *baseStore[S]) dispatchOn(scheduler Scheduler, action Action) {
 	if b == nil {
 		return
@@ -93,7 +92,7 @@ func (b *baseStore[S]) SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]
 	}
 
 	if len(b.subscribers) == 0 {
-		b.onBeginSubscribe()
+		b.onFirstSubscribe()
 	}
 
 	b.subscribers = append(b.subscribers, subscriberEntry[S]{
@@ -104,7 +103,7 @@ func (b *baseStore[S]) SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]
 	return b
 }
 
-func (b *baseStore[State]) getState() (state State) {
+func (b *baseStore[S]) getState() (state S) {
 	if b == nil {
 		return
 	}
@@ -169,6 +168,6 @@ func (b *baseStore[S]) doDispatchSubscriberOn(scheduler Scheduler, wg *sync.Wait
 	})
 }
 
-func (b *baseStore[State]) onBeginSubscribe() {
+func (b *baseStore[S]) onFirstSubscribe() {
 
 }

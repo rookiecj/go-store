@@ -14,19 +14,11 @@ type Scheduler interface {
 	Schedule(task Task, onCompleted Callback)
 }
 
-type Task interface {
-	// Do runs a Task
-	Do()
-	// Result is only available after Do
-	Result() any
-}
-
 type immediateScheduler struct{}
 type mainScheduler struct{}
 type backgroundScheduler struct{}
 
 func (c *immediateScheduler) Schedule(task Task, onCompleted Callback) {
-	// run task on the caller or dispatcher's context
 	task.Do()
 	if onCompleted != nil {
 		onCompleted()

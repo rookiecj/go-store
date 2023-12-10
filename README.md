@@ -83,8 +83,10 @@ func main() {
 
 ## TODO
 - [X] make sure all subscribers notified
-- [X] add Store callbacks like OnFirstSubscription
+- [X] add Store callbacks like onFirstSubscribe
 - [X] add Dispatch Scheduler, SubscribeOn
-- [ ] add README
+- [ ] support Main/Background Scheduler
+- [ ] make age precisely
+- [X] add README
 - [X] add doc
 - [ ] add more testing
