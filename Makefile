@@ -10,10 +10,19 @@ build: ## build
 	go build ./store/...
 
 clean: 	## clean
-	@-rm store.test
+	-rm store.test
 
-test: ## test
+test: clean ## test
 	go test -v -timeout=30s ./store/...
+
+bench: clean	## test bench
+	# -benchtime sets the minimum amount of time that the benchmark function will run
+	# -run=^# filter out all of the unit test functions.
+	go test -v -bench=. -benchtime=10s ./store/...
+
+bench-mem: clean	## test bench with memory usage
+	# -run=^# filter out all of the unit test functions.
+	go test -v -bench=. -benchtime=10s -benchmem ./store/...
 
 coverage:	## test with coverage
 	#go test --converage ./store/...

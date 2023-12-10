@@ -1,21 +1,19 @@
 package store
 
-type baseTask[S State] struct {
-	subscriber Subscriber[S]
-	state      S
-	oldState   S
-	action     Action
+type doTask struct {
+	task func()
 }
 
-func NewTask[S State](subscriber Subscriber[S], state S, oldState S, action Action) Task {
-	return &baseTask[S]{
-		subscriber: subscriber,
-		state:      state,
-		oldState:   oldState,
-		action:     action,
+func NewTask(task func()) Task {
+	return &doTask{
+		task: task,
 	}
 }
 
-func (c *baseTask[S]) Do() {
-	c.subscriber(c.state, c.oldState, c.action)
+func (c *doTask) Do() {
+	c.task()
+}
+
+func (c *doTask) Result() any {
+	return nil
 }
