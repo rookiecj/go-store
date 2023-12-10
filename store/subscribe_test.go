@@ -9,6 +9,7 @@ func Test_baseStore_Subscribe(t *testing.T) {
 
 	type args[S State] struct {
 		action      Action
+		actions     int // actions to dispatch
 		subscribers int // subscribers to add
 	}
 	type testCase[S State] struct {
@@ -42,6 +43,7 @@ func Test_baseStore_Subscribe(t *testing.T) {
 			b:    newMyStateStore(),
 			args: args[myState]{
 				action:      &addAction{},
+				actions:     1,
 				subscribers: 1,
 			},
 			want: 2,
@@ -51,9 +53,20 @@ func Test_baseStore_Subscribe(t *testing.T) {
 			b:    newMyStateStore(),
 			args: args[myState]{
 				action:      &addAction{},
+				actions:     1,
 				subscribers: 2,
 			},
 			want: 4,
+		},
+		{
+			name: "action 2 - subscriber 2",
+			b:    newMyStateStore(),
+			args: args[myState]{
+				action:      &addAction{},
+				actions:     2,
+				subscribers: 2,
+			},
+			want: 2 + 4,
 		},
 	}
 	for _, tt := range tests {
@@ -67,7 +80,9 @@ func Test_baseStore_Subscribe(t *testing.T) {
 			}
 			log.Println("Dispatch action", tt.args.action)
 			if tt.args.action != nil {
-				tt.b.Dispatch(tt.args.action)
+				for idx := 0; idx < tt.args.actions; idx++ {
+					tt.b.Dispatch(tt.args.action)
+				}
 			}
 
 			tt.b.waitForDispatch()
