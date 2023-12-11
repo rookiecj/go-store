@@ -9,11 +9,14 @@ tidy:  ## update deps
 build: ## build
 	go build ./store/...
 
+lint:
+	go vet ./store/...
+
 clean: 	## clean
 	-rm store.test
 
 test: clean ## test
-	go test -v -timeout=30s ./store/...
+	go test -v -timeout=10s ./store/...
 
 bench: clean	## test bench
 	# -benchtime sets the minimum amount of time that the benchmark function will run

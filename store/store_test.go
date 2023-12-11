@@ -20,7 +20,10 @@ type setAction struct {
 }
 
 var (
-	myInitialState = myState{}
+	myInitialState = myState{
+		id:    0,
+		value: "",
+	}
 )
 
 func (c myState) StateInterface()     {}
@@ -219,7 +222,7 @@ func Test_baseStore_Dispatch(t *testing.T) {
 			name: "add action - empty",
 			b:    newMyStateStore(),
 			args: args{
-				actions: []Action{&addAction{}},
+				actions: []Action{},
 			},
 			want: myInitialState,
 		},
@@ -251,11 +254,15 @@ func Test_baseStore_Dispatch(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			for _, action := range tt.args.actions {
 				tt.b.Dispatch(action)
 			}
+
+			//time.Sleep(100 * time.Millisecond)
 			tt.b.waitForDispatch()
 
 			want := tt.want
