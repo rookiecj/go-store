@@ -1,7 +1,6 @@
 package store
 
 import (
-	"errors"
 	"sync"
 	"sync/atomic"
 )
@@ -83,8 +82,7 @@ func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
 	if b == nil {
 		return b
 	}
-	// schedule the task on caller's context
-	return b.SubscribeOn(Immediate, subscriber)
+	return b.SubscribeOn(Main, subscriber)
 }
 
 func (b *baseStore[S]) SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]) Store[S] {
