@@ -71,11 +71,16 @@ func (b *baseStore[S]) dispatchOn(scheduler Scheduler, action Action) {
 		return
 	}
 	scheduler.Schedule(NewTask(func() {
+
+		// reduce
 		oldState := b.getState()
 		b.state = b.reduce(oldState, action)
-		b.dispatch(oldState, action, b.state)
-	}),
-		nil)
+
+		// dispatch
+		dispatchScheduler.Schedule(NewTask(func() {
+			b.dispatch(oldState, action, b.state)
+		}), nil)
+	}), nil)
 }
 
 func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
@@ -123,9 +128,9 @@ func (b *baseStore[S]) reduce(state S, action Action) S {
 }
 
 // dispatch state to subscribers in their context
-func (b *baseStore[S]) dispatch(oldState S, action Action, newState S) error {
+func (b *baseStore[S]) dispatch(oldState S, action Action, newState S) {
 	if b == nil {
-		return errors.New("store is nil")
+		return
 	}
 
 	// wait for previous dispatching
@@ -141,7 +146,7 @@ func (b *baseStore[S]) dispatch(oldState S, action Action, newState S) error {
 		wg.Wait()
 	}
 	b.dispatchLock.Unlock()
-	return nil
+	return
 }
 
 func (b *baseStore[S]) dispatchSubscriberOn(scheduler Scheduler, subscriber Subscriber[S], newState S, oldState S, action Action) {
@@ -150,7 +155,9 @@ func (b *baseStore[S]) dispatchSubscriberOn(scheduler Scheduler, subscriber Subs
 	}
 
 	b.dispatchLock.Lock()
-	b.doDispatchSubscriberOn(scheduler, nil, b.age, subscriber, b.state, b.state, InitAction)
+	wg := sync.WaitGroup{}
+	b.doDispatchSubscriberOn(scheduler, &wg, b.age, subscriber, b.state, b.state, InitAction)
+	wg.Wait()
 	b.dispatchLock.Unlock()
 }
 
@@ -159,12 +166,13 @@ func (b *baseStore[S]) doDispatchSubscriberOn(scheduler Scheduler, wg *sync.Wait
 		wg.Add(1)
 	}
 	scheduler.Schedule(NewTask(func() {
-		subscriber(newState, oldState, action)
-	}), func() {
+		// Dispatcher not to wait for calling a subscriber
 		if wg != nil {
 			wg.Done()
 		}
-	})
+		// and call subscriber
+		subscriber(newState, oldState, action)
+	}), nil)
 }
 
 func (b *baseStore[State]) onBeginSubscribe() {
