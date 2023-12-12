@@ -1,5 +1,10 @@
 package store
 
+type Task interface {
+	// Do runs a Task
+	Do()
+}
+
 type doTask struct {
 	task func()
 }
@@ -12,8 +17,4 @@ func NewTask(task func()) Task {
 
 func (c *doTask) Do() {
 	c.task()
-}
-
-func (c *doTask) Result() any {
-	return nil
 }
