@@ -101,9 +101,11 @@ func (b *baseStore[S]) SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]
 	entry := subscriberEntry[S]{
 		scheduler:  scheduler,
 		subscriber: subscriber}
+	// dispatch before adding to subscribers
+	b.dispatchWhenSubscribe(entry, b.state, b.state, InitAction)
+
 	b.subscribers = append(b.subscribers, entry)
 
-	b.dispatchWhenSubscribe(entry, b.state, b.state, InitAction)
 	return b
 }
 
