@@ -3,73 +3,9 @@ package store
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
-
-type myState struct {
-	id    int
-	value string
-}
-
-type addAction struct {
-	value string
-}
-
-type setAction struct {
-	value string
-}
-
-var (
-	myInitialState = myState{
-		id:    0,
-		value: "",
-	}
-)
-
-func (c myState) StateInterface()     {}
-func (c *addAction) ActionInterface() {}
-func (c *setAction) ActionInterface() {}
-
-func newMyStateStore() Store[myState] {
-	return newMyStateStoreWithReducer(myStateReducer)
-}
-
-func newMyStateStoreWithReducer(reducer Reducer[myState]) Store[myState] {
-	// test on Immediate scheduler
-	//return newStoreOn(Immediate, myInitialState, reducer)
-	return NewStore(myInitialState, reducer)
-}
-
-func myStateReducer(state myState, action Action) myState {
-	switch action.(type) {
-	case *addAction:
-		reifiedAction := action.(*addAction)
-		return myState{
-			id:    state.id,
-			value: state.value + reifiedAction.value,
-		}
-	case *setAction:
-		reifiedAction := action.(*setAction)
-		return myState{
-			id:    state.id,
-			value: reifiedAction.value,
-		}
-	}
-	return state
-}
-
-func getTestSubscriber[S State](t *testing.T, inner func(t *testing.T, state S, old S, action Action)) Subscriber[S] {
-	testSubscriber := func(state S, old S, action Action) {
-		inner(t, state, old, action)
-	}
-	return testSubscriber
-}
-
-func assertState(t *testing.T, got myState, want myState, action Action) {
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("Dispatch() state got %v want %v, action = %v", got, want, action)
-	}
-}
 
 func Test_Store_example(t *testing.T) {
 
@@ -203,15 +139,16 @@ func Test_baseStore_Dispatch(t *testing.T) {
 	type args struct {
 		actions []Action
 	}
-	type testCase[S State] struct {
+	// debugger got confused to get the right symbol, change name
+	type testCaseDispatch[S State] struct {
 		name string
 		b    Store[S]
 		args args
 		want S
 	}
-	tests := []testCase[myState]{
+	tests := []testCaseDispatch[myState]{
 		{
-			name: "nil action",
+			name: "nil actions - no dispatch",
 			b:    newMyStateStore(),
 			args: args{
 				actions: nil,
@@ -219,13 +156,22 @@ func Test_baseStore_Dispatch(t *testing.T) {
 			want: myInitialState,
 		},
 		{
-			name: "add action - empty",
+			name: "add action - empty - no dispatch",
 			b:    newMyStateStore(),
 			args: args{
 				actions: []Action{},
 			},
 			want: myInitialState,
 		},
+		{
+			name: "add action - nil",
+			b:    newMyStateStore(),
+			args: args{
+				actions: []Action{nil},
+			},
+			want: myInitialState,
+		},
+
 		{
 			name: "add action - 123",
 			b:    newMyStateStore(),
@@ -255,20 +201,102 @@ func Test_baseStore_Dispatch(t *testing.T) {
 		},
 	}
 
+	//logger.SetLogEnable(true)
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+
+			testScheduler.Start()
+
 			for _, action := range tt.args.actions {
 				tt.b.Dispatch(action)
 			}
 
-			//time.Sleep(100 * time.Millisecond)
 			tt.b.waitForDispatch()
 
 			want := tt.want
 			got := tt.b.getState()
 			if !reflect.DeepEqual(got, want) {
 				t.Errorf("Dispatch: want %v got %v, actions %v", want, got, tt.args.actions)
+			}
+		})
+	}
+}
+
+func Test_baseStore_ReduceSerialized(t *testing.T) {
+
+	type args struct {
+		times int
+	}
+	type testCaseReduceSerial[S State] struct {
+		name string
+		b    Store[S]
+		args args
+		want S
+	}
+
+	limit := 1024
+
+	tests := []testCaseReduceSerial[myState]{
+		{
+			name: "add action - x times",
+			b:    newMyStateStore(),
+			args: args{
+				times: limit,
+			},
+			want: myState{
+				id: 0,
+				value: func() (result string) {
+					for idx := 0; idx < limit; idx++ {
+						if idx == 0 {
+							result += fmt.Sprintf("%d", idx+1)
+						} else {
+							result += fmt.Sprintf(",%d", idx+1)
+						}
+					}
+					return
+				}(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			testScheduler.Start()
+
+			for idx := 0; idx < tt.args.times; idx++ {
+				nth := idx + 1
+				if nth == 1 {
+					tt.b.Dispatch(&addAction{
+						value: fmt.Sprintf("%d", nth),
+					})
+				} else {
+					tt.b.Dispatch(&addAction{
+						value: fmt.Sprintf(",%d", nth),
+					})
+				}
+			}
+
+			tt.b.waitForDispatch()
+
+			want := tt.want
+			got := tt.b.getState()
+			wantToks := strings.Split(want.value, ",")
+			gotToks := strings.Split(got.value, ",")
+			if len(wantToks) != len(gotToks) {
+				t.Errorf("ReduceSerialized: want %v", want)
+				t.Errorf("ReduceSerialized: got %v", got)
+			}
+			for idx := 0; idx < len(wantToks); idx++ {
+				if wantToks[idx] != gotToks[idx] {
+					t.Errorf("ReduceSerialized: %d: '%s','%s'", idx, wantToks[idx], gotToks[idx])
+				}
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("ReduceSerialized: want %v", want)
+				t.Errorf("ReduceSerialized: got %v", got)
 			}
 		})
 	}

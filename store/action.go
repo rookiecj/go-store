@@ -6,7 +6,7 @@ type Action interface {
 }
 
 var (
-	// InitAction is dispatched when to initialise the store.
+	// InitAction is dispatched when to initialise the store or a subscriber subscribes
 	InitAction = &initAction{}
 )
 
