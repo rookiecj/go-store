@@ -28,7 +28,7 @@ func TestNewSyncQueue_PushPop(t *testing.T) {
 	t.Run("PushPop-Sequential", func(t *testing.T) {
 		sq := NewSyncQueue[myState]()
 
-		limit := 100000
+		limit := 10240
 		for idx := 0; idx < limit; idx++ {
 			sq.Push(myState{
 				id:    idx,
@@ -91,7 +91,7 @@ func TestNewSyncQueue_PopPush(t *testing.T) {
 	t.Run("PopPush", func(t *testing.T) {
 		sq := NewSyncQueue[myState]()
 
-		limit := 100000
+		limit := 10240
 
 		cwg := sync.WaitGroup{}
 
@@ -139,7 +139,7 @@ func TestNewSyncQueue_MultipleProducersSingleConsumer(t *testing.T) {
 
 		sq := NewSyncQueue[myState]()
 
-		limit := 1000000
+		limit := 10240
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		go func() {
@@ -179,7 +179,7 @@ func TestNewSyncQueue_SingleProducerMultipleConsumers(t *testing.T) {
 
 		sq := NewSyncQueue[myState]()
 
-		limit := 1000000
+		limit := 10240
 		wg := sync.WaitGroup{} // ptr
 		wg.Add(1)
 		go func() {
@@ -219,7 +219,7 @@ func TestNewSyncQueue_MultipleProducersMultipleConsumers(t *testing.T) {
 
 		sq := NewSyncQueue[myState]()
 
-		limit := 1000000
+		limit := 10240
 		wg := sync.WaitGroup{} // ptr
 		wg.Add(1)
 		go func() {

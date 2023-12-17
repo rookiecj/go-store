@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"github.com/rookiecj/go-store/logger"
 	"github.com/rookiecj/go-store/sched"
 	"log"
 	"sync/atomic"
@@ -242,7 +241,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 		},
 	}
 
-	logger.SetLogEnable(true)
+	//logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt
@@ -252,10 +251,10 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 
 			log.Println("Subscriber: subscribers:", tt.args.subscribers)
 			for idx := int64(0); idx < tt.args.subscribers; idx++ {
-				idxdup := idx
+				//idxdup := idx
 				tt.b.SubscribeOn(tt.args.scheduler, func(state myState, old myState, action Action) {
 					atomic.AddInt64(&tt.called, 1)
-					log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
+					//log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
 				})
 			}
 
@@ -317,7 +316,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 		},
 	}
 
-	logger.SetLogEnable(true)
+	//logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt
@@ -327,10 +326,10 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 
 			log.Println("Subscriber: subscribers:", tt.args.subscribers)
 			for idx := int64(0); idx < tt.args.subscribers; idx++ {
-				idxdup := idx
+				//idxdup := idx
 				tt.b.SubscribeOn(tt.args.scheduler, func(state myState, old myState, action Action) {
 					atomic.AddInt64(&tt.called, 1)
-					log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
+					//log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
 					tt.collected = tt.collected + state.value
 				})
 			}

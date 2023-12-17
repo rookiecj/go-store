@@ -9,9 +9,9 @@ var (
 type Level string
 
 var CRIT Level = "CRIT"
-var ERRO Level = "ERRO"
+var ERROR Level = "ERROR"
 var INFO Level = "INFO"
-var DEBU Level = "DEBU"
+var DEBUG Level = "DEBU"
 
 func SetLogEnable(enable bool) {
 	logEnabled = enable
@@ -24,10 +24,18 @@ func Logf(level string, fmt string, args ...interface{}) {
 	log.Printf(level+" "+fmt, args...)
 }
 
+func Debugf(fmt string, args ...interface{}) {
+	Logf(string(DEBUG), fmt, args...)
+}
+
 func Infof(fmt string, args ...interface{}) {
 	Logf(string(INFO), fmt, args...)
 }
 
 func Errf(fmt string, args ...interface{}) {
-	Logf(string(ERRO), fmt, args...)
+	Logf(string(ERROR), fmt, args...)
+}
+
+func Critf(fmt string, args ...interface{}) {
+	Logf(string(CRIT), fmt, args...)
 }
