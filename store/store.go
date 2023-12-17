@@ -1,10 +1,11 @@
 package store
 
 import (
-	"github.com/rookiecj/go-store/logger"
-	"github.com/rookiecj/go-store/sched"
 	"sync"
 	"sync/atomic"
+
+	"github.com/rookiecj/go-store/logger"
+	"github.com/rookiecj/go-store/sched"
 )
 
 // Store holds the state of the application.
@@ -178,22 +179,25 @@ func (b *baseStore[S]) dispatchWhenSubscribe(entry *subscriberEntry[S], newState
 
 func (b *baseStore[S]) doDispatchSubscriberLocked(entry *subscriberEntry[S], wg *sync.WaitGroup, age int64, newState S, oldState S, action Action) {
 
-	// not schedule but run a task here, not to make deadlock on dispatcher
+	// if the subscriber is called in the same context, it will be called immediately
+	// not to make deadlock on dispatcher
 	if entry.scheduler == b.dispatchScheduler {
 		entry.subscriber(newState, oldState, action)
 	} else {
 		if wg != nil {
 			wg.Add(1)
 		}
+
 		entry.scheduler.Schedule(func() {
-			// waits up Dispatcher
+
+			// call subscriber
+			entry.subscriber(newState, oldState, action)
+
+			// 'Done' called after calling a subscriber to ensure all subscribers are one same state
+			// wake up Dispatcher
 			if wg != nil {
 				wg.Done()
 			}
-
-			// and call subscriber
-			entry.subscriber(newState, oldState, action)
-
 		})
 	}
 }
