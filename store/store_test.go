@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/rookiecj/go-store/logger"
 	"reflect"
 	"strings"
 	"testing"
@@ -201,7 +202,7 @@ func Test_baseStore_Dispatch(t *testing.T) {
 		},
 	}
 
-	SetLogEnable(true)
+	logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt

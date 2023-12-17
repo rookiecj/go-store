@@ -1,6 +1,7 @@
-package store
+package sched
 
 import (
+	"github.com/rookiecj/go-store/logger"
 	"sync"
 )
 
@@ -55,14 +56,14 @@ func (c *mainScheduler) Start() {
 	wg.Add(1)
 	go func() {
 		wg.Done()
-		infof("mainScheduler:")
+		logger.Infof("mainScheduler:")
 		c.taskCount++
 		for c.taskCount > 0 {
 			if task, err := c.taskQ.Pop(); err == nil {
 				task()
 			}
 		}
-		infof("mainScheduler: exit")
+		logger.Infof("mainScheduler: exit")
 	}()
 	wg.Wait()
 }

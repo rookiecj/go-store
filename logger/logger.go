@@ -1,4 +1,4 @@
-package store
+package logger
 
 import "log"
 
@@ -17,17 +17,17 @@ func SetLogEnable(enable bool) {
 	logEnabled = enable
 }
 
-func logf(level string, fmt string, args ...interface{}) {
+func Logf(level string, fmt string, args ...interface{}) {
 	if !logEnabled {
 		return
 	}
 	log.Printf(level+" "+fmt, args...)
 }
 
-func infof(fmt string, args ...interface{}) {
-	logf(string(INFO), fmt, args...)
+func Infof(fmt string, args ...interface{}) {
+	Logf(string(INFO), fmt, args...)
 }
 
-func errf(fmt string, args ...interface{}) {
-	logf(string(ERRO), fmt, args...)
+func Errf(fmt string, args ...interface{}) {
+	Logf(string(ERRO), fmt, args...)
 }

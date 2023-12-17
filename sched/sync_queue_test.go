@@ -1,4 +1,4 @@
-package store
+package sched
 
 import (
 	"fmt"
@@ -7,6 +7,11 @@ import (
 	"testing"
 	"time"
 )
+
+type myState struct {
+	id    int
+	value string
+}
 
 func TestNewSyncQueue_NewClose(t *testing.T) {
 

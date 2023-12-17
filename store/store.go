@@ -1,6 +1,8 @@
 package store
 
 import (
+	"github.com/rookiecj/go-store/logger"
+	"github.com/rookiecj/go-store/sched"
 	"sync"
 	"sync/atomic"
 )
@@ -14,7 +16,7 @@ type Store[S State] interface {
 	Subscribe(subscriber Subscriber[S]) Store[S]
 	// SubscribeOn adds a subscriber to the store.
 	// when the state changes, subscribers are notified on the scheduler.
-	SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]) Store[S]
+	SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Store[S]
 
 	// getState returns the current state of the store.
 	getState() S
@@ -41,21 +43,21 @@ type baseStore[S State] struct {
 	subscribers []*subscriberEntry[S]
 
 	// reduce and dispatch context
-	dispatchScheduler Scheduler
+	dispatchScheduler sched.Scheduler
 	age               int64
 	dispatchLock      *sync.Mutex
 }
 
 type subscriberEntry[S State] struct {
-	scheduler  Scheduler
+	scheduler  sched.Scheduler
 	subscriber Subscriber[S]
 }
 
 func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
-	return NewStoreOn(Immediate, initialState, reducer)
+	return NewStoreOn(sched.Immediate, initialState, reducer)
 }
 
-func NewStoreOn[S State](scheduler Scheduler, initialState S, reducer Reducer[S]) Store[S] {
+func NewStoreOn[S State](scheduler sched.Scheduler, initialState S, reducer Reducer[S]) Store[S] {
 	return &baseStore[S]{
 		state:             initialState,
 		reducer:           reducer,
@@ -74,17 +76,17 @@ func (b *baseStore[S]) Dispatch(action Action) {
 }
 
 // dispatchOn dispatches an action to the store on the scheduler.
-func (b *baseStore[S]) dispatchOn(scheduler Scheduler, action Action) {
+func (b *baseStore[S]) dispatchOn(scheduler sched.Scheduler, action Action) {
 	if b == nil {
 		return
 	}
 	scheduler.Schedule(func() {
-		infof("reduce: action:%v\n", action)
+		logger.Infof("reduce: action:%v\n", action)
 		// reduce
 		oldState := b.getState()
 		b.state = b.reduce(oldState, action)
 		// dispatch
-		infof("dispatch: state %v with action: %v", b.state, action)
+		logger.Infof("dispatch: state %v with action: %v", b.state, action)
 		b.dispatch(oldState, action, b.state)
 	})
 }
@@ -96,7 +98,7 @@ func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
 	return b.SubscribeOn(b.dispatchScheduler, subscriber)
 }
 
-func (b *baseStore[S]) SubscribeOn(scheduler Scheduler, subscriber Subscriber[S]) Store[S] {
+func (b *baseStore[S]) SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Store[S] {
 	if b == nil {
 		return b
 	}

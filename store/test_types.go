@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/rookiecj/go-store/sched"
 	"reflect"
 	"testing"
 )
@@ -19,7 +20,7 @@ type setAction struct {
 }
 
 var (
-	testScheduler  = Main
+	testScheduler  = sched.Main
 	myInitialState = myState{
 		id:    0,
 		value: "",

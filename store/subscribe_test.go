@@ -2,6 +2,8 @@ package store
 
 import (
 	"fmt"
+	"github.com/rookiecj/go-store/logger"
+	"github.com/rookiecj/go-store/sched"
 	"log"
 	"sync/atomic"
 	"testing"
@@ -111,7 +113,7 @@ func Test_baseStore_Subscribe(t *testing.T) {
 func Test_baseStore_SubscribeOn(t *testing.T) {
 
 	type args[S State] struct {
-		scheduler   Scheduler
+		scheduler   sched.Scheduler
 		action      Action
 		actions     int64 // actions to dispatch
 		subscribers int64 // subscribers to add
@@ -144,7 +146,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 0 - subscriber 1 - callback when subscribe",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      nil,
 				actions:     0,
 				subscribers: 1,
@@ -156,7 +158,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 0 - subscriber 1",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      nil,
 				actions:     0,
 				subscribers: 1,
@@ -168,7 +170,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 1 - subscriber 1",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      &addAction{"1"},
 				actions:     1,
 				subscribers: 1,
@@ -180,7 +182,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 1 - subscriber 2",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      &addAction{"12"},
 				actions:     1,
 				subscribers: 2,
@@ -192,7 +194,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 2 - subscriber 2",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      &addAction{"22"},
 				actions:     2,
 				subscribers: 2,
@@ -205,7 +207,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 2 - subscriber many",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      &addAction{"2x"},
 				actions:     2,
 				subscribers: subscriberlimit,
@@ -218,7 +220,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action many - subscriber 2",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      &addAction{"X2"},
 				actions:     actionLimit,
 				subscribers: 2,
@@ -230,7 +232,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action many - subscriber many",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      nil,
 				actions:     actionLimit,
 				subscribers: subscriberlimit,
@@ -240,7 +242,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 		},
 	}
 
-	SetLogEnable(true)
+	logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt
@@ -282,7 +284,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 
 	type args[S State] struct {
-		scheduler   Scheduler
+		scheduler   sched.Scheduler
 		action      Action
 		actions     int64 // actions to dispatch
 		subscribers int64 // subscribers to add
@@ -304,7 +306,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 			name: "background - action many - subscriber many",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   Background,
+				scheduler:   sched.Background,
 				action:      nil,
 				actions:     actionLimit,
 				subscribers: subscriberlimit,
@@ -315,7 +317,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 		},
 	}
 
-	SetLogEnable(true)
+	logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt
