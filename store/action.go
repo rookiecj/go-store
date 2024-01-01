@@ -9,8 +9,7 @@ type Action interface {
 type AsyncAction interface {
 	Action
 
-	// Run is called with Dispatcher as an argument.
-	// Dispatcher can be used to dispatch actions.
+	// Run is called with Dispatcher which can be used to dispatch actions.
 	Run(Dispatcher)
 }
 

@@ -87,9 +87,9 @@ func main() {
 - [X] add SubscribeOn
 - [X] add README
 - [X] add doc
-- [ ] support Main/Background/Dispatch Scheduler
+- [X] support Main/Background/Dispatch Scheduler(Experimental)
 - [ ] add AddReducer
-- [ ] add AsyncAction for async work 
+- [X] add AsyncAction for async work 
 - [ ] make getState public for subscribers not to save the state locally 
 - [ ] make age precisely
 - [ ] add more testing
