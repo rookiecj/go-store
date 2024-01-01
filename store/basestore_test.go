@@ -11,16 +11,16 @@ func Test_Store_example(t *testing.T) {
 
 	t.Run("example", func(t *testing.T) {
 		initialState := myState{}
-		reducer := func(state myState, action Action) myState {
+		reducer := func(state myState, action Action) (myState, error) {
 			switch action.(type) {
 			case *addAction:
 				reifiedAction := action.(*addAction)
 				return myState{
 					id:    state.id,
 					value: state.value + reifiedAction.value,
-				}
+				}, nil
 			}
-			return initialState
+			return initialState, nil
 		}
 
 		store := NewStore[myState](initialState, reducer)

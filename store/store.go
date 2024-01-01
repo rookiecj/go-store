@@ -1,11 +1,21 @@
 package store
 
 import (
+	"errors"
+
 	"github.com/rookiecj/go-store/sched"
+)
+
+var (
+	// ErrSkipReducing is returned by a reducer to stop reducing further.
+	ErrSkipReducing = errors.New("skip reducing")
 )
 
 // Store holds the state of the application.
 type Store[S State] interface {
+
+	// AddReducer adds a reducer to the store.
+	AddReducer(reducer Reducer[S]) Store[S]
 
 	// Dispatch dispatches an action to the store.
 	Dispatch(action Action)
@@ -31,7 +41,8 @@ type State interface {
 }
 
 // Reducer reduces the state of the application, it is called in Main context
-type Reducer[S State] func(state S, action Action) S
+// error can return ErrSkipReducing to stop reducing further
+type Reducer[S State] func(state S, action Action) (S, error)
 
 // Subscriber is notified when the state changes.
 type Subscriber[S State] func(newState S, oldState S, action Action)

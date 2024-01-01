@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"sync"
 	"sync/atomic"
 
@@ -11,7 +12,7 @@ import (
 type baseStore[S State] struct {
 	state S
 	// reducer is called in Main context
-	reducer     Reducer[S]
+	reducers    []Reducer[S]
 	subscribers []*subscriberEntry[S]
 
 	// reduce and dispatch context
@@ -33,11 +34,21 @@ func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
 func NewStoreOn[S State](scheduler sched.Scheduler, initialState S, reducer Reducer[S]) Store[S] {
 	return &baseStore[S]{
 		state:             initialState,
-		reducer:           reducer,
+		reducers:          []Reducer[S]{reducer},
 		dispatchScheduler: scheduler,
 		age:               0,
 		dispatchLock:      &sync.Mutex{},
 	}
+}
+
+func (b *baseStore[S]) AddReducer(reducer Reducer[S]) Store[S] {
+	if b == nil {
+		return b
+	}
+
+	b.reducers = append(b.reducers, reducer)
+
+	return b
 }
 
 func (b *baseStore[S]) Dispatch(action Action) {
@@ -121,7 +132,19 @@ func (b *baseStore[S]) reduce(state S, action Action) S {
 	if b == nil {
 		return state
 	}
-	return b.reducer(state, action)
+	reducers := b.reducers[:]
+	newState := b.state
+	var err error
+	for _, reducer := range reducers {
+		newState, err = reducer(newState, action)
+		if err != nil {
+			if errors.Is(err, ErrSkipReducing) {
+				break
+			}
+			logger.Errf("error reducing: %s", err)
+		}
+	}
+	return newState
 }
 
 // dispatch state to subscribers in their context
