@@ -213,6 +213,7 @@ func Test_baseStore_Dispatch(t *testing.T) {
 				tt.b.Dispatch(action)
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			want := tt.want
@@ -279,6 +280,7 @@ func Test_baseStore_ReduceSerialized(t *testing.T) {
 				}
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			want := tt.want

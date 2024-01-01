@@ -100,6 +100,7 @@ func Test_baseStore_Subscribe(t *testing.T) {
 				tt.b.Dispatch(tt.args.action)
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			if tt.want != tt.called {
@@ -271,6 +272,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 				}
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			if tt.want != tt.called {
@@ -343,6 +345,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 				})
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			if tt.want != tt.called {
