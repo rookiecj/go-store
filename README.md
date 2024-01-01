@@ -85,10 +85,13 @@ func main() {
 - [X] make sure all subscribers notified
 - [X] add Store callbacks like onFirstSubscribe
 - [X] add SubscribeOn
-- [ ] support Main/Background/Dispatch Scheduler
-- [ ] make age precisely
-- [ ] add AddReducer
 - [X] add README
 - [X] add doc
+- [X] support Main/Background/Dispatch Scheduler(Experimental)
+- [ ] remove explicit scheduler start/stop
+- [X] add AsyncAction for async work
+- [X] add AddReducer
+- [ ] make getState public for subscribers not to save the state locally 
+- [ ] add State history
+- [ ] make age precisely
 - [ ] add more testing
-- 

@@ -100,6 +100,7 @@ func Test_baseStore_Subscribe(t *testing.T) {
 				tt.b.Dispatch(tt.args.action)
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			if tt.want != tt.called {
@@ -271,6 +272,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 				}
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			if tt.want != tt.called {
@@ -297,7 +299,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 		want      int64 // call times
 	}
 
-	var actionLimit int64 = 32
+	var actionLimit int64 = 64
 	var subscriberlimit int64 = 1
 
 	tests := []testCaseSubscribeOnMany[myState]{
@@ -329,7 +331,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 				//idxdup := idx
 				tt.b.SubscribeOn(tt.args.scheduler, func(state myState, old myState, action Action) {
 					atomic.AddInt64(&tt.called, 1)
-					//log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
+					log.Printf("Subscriber %d: got called: %d state:%v\n", idx, tt.called, state)
 					tt.collected = tt.collected + state.value
 				})
 			}
@@ -343,6 +345,7 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 				})
 			}
 
+			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			if tt.want != tt.called {

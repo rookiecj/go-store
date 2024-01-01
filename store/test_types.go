@@ -31,6 +31,7 @@ func (c myState) StateInterface()     {}
 func (c *addAction) ActionInterface() {}
 func (c *setAction) ActionInterface() {}
 
+// new store with testScheduler and myStateReducer
 func newMyStateStore() Store[myState] {
 	return newMyStateStoreWithReducer(myStateReducer)
 }
@@ -41,10 +42,10 @@ func newMyStateStoreWithReducer(reducer Reducer[myState]) Store[myState] {
 	//return NewStore(myInitialState, reducer)
 }
 
-func myStateReducer(state myState, action Action) myState {
+func myStateReducer(state myState, action Action) (myState, error) {
 	// support nil action
 	if action == nil {
-		return state
+		return state, nil
 	}
 	switch action.(type) {
 	case *addAction:
@@ -52,15 +53,15 @@ func myStateReducer(state myState, action Action) myState {
 		return myState{
 			id:    state.id,
 			value: state.value + reifiedAction.value,
-		}
+		}, nil
 	case *setAction:
 		reifiedAction := action.(*setAction)
 		return myState{
 			id:    state.id,
 			value: reifiedAction.value,
-		}
+		}, nil
 	}
-	return state
+	return state, nil
 }
 
 func getTestSubscriber[S State](t *testing.T, inner func(t *testing.T, state S, old S, action Action)) Subscriber[S] {
