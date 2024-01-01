@@ -22,16 +22,16 @@ func (c *addAction) ActionInterface() {}
 func main() {
 
 	initialState := myState{}
-	reducer := func(state myState, action store.Action) myState {
+	reducer := func(state myState, action store.Action) (myState, error) {
 		switch action.(type) {
 		case *addAction:
 			reifiedAction := action.(*addAction)
 			return myState{
 				id:    state.id,
 				value: state.value + reifiedAction.value,
-			}
+			}, nil
 		}
-		return initialState
+		return state, nil
 	}
 
 	stateStore := store.NewStore[myState](initialState, reducer)
