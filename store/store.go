@@ -58,6 +58,7 @@ func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
 	return NewStoreOn(sched.Immediate, initialState, reducer)
 }
 
+// Scheduler should ensure actions to be reduced in order
 func NewStoreOn[S State](scheduler sched.Scheduler, initialState S, reducer Reducer[S]) Store[S] {
 	return &baseStore[S]{
 		state:             initialState,
@@ -81,15 +82,23 @@ func (b *baseStore[S]) dispatchOn(scheduler sched.Scheduler, action Action) {
 	if b == nil {
 		return
 	}
-	scheduler.Schedule(func() {
-		logger.Infof("reduce: action:%v\n", action)
-		// reduce
-		oldState := b.getState()
-		b.state = b.reduce(oldState, action)
-		// dispatch
-		logger.Infof("dispatch: state %v with action: %v", b.state, action)
-		b.dispatch(oldState, action, b.state)
-	})
+	switch action.(type) {
+	case AsyncAction:
+		scheduler.Schedule(func() {
+			asyncAction := action.(AsyncAction)
+			asyncAction.Run(b)
+		})
+	default:
+		scheduler.Schedule(func() {
+			logger.Infof("reduce: action:%v\n", action)
+			// reduce
+			oldState := b.getState()
+			b.state = b.reduce(oldState, action)
+			// dispatch
+			logger.Infof("dispatch: state %v with action: %v", b.state, action)
+			b.dispatch(oldState, action, b.state)
+		})
+	}
 }
 
 func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {

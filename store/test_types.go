@@ -31,6 +31,7 @@ func (c myState) StateInterface()     {}
 func (c *addAction) ActionInterface() {}
 func (c *setAction) ActionInterface() {}
 
+// new store with testScheduler and myStateReducer
 func newMyStateStore() Store[myState] {
 	return newMyStateStoreWithReducer(myStateReducer)
 }
