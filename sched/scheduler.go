@@ -9,9 +9,9 @@ type TaskFunc func()
 
 type Scheduler interface {
 	Start()
-	Stop()
-	StopWait()
 	Schedule(task TaskFunc)
+	Stop()
+	WaitForScheduler()
 }
 
 type immediateScheduler struct{}
@@ -20,20 +20,24 @@ type mainScheduler struct {
 	//taskChan  chan func()
 	taskCount int
 	taskQ     SyncQueue[TaskFunc]
+	doneWG    sync.WaitGroup
 }
 
 type backgroundScheduler struct {
 	taskCount int
 	lock      *sync.Mutex
 	signal    *sync.Cond
+	doneWG    sync.WaitGroup
 }
 
 var (
-	// Immediate runs a task immediately, no schedule
+	// Immediate runs tasks immediately, no schedule
 	Immediate = &immediateScheduler{}
-	// Main runs a task on the same context.
-	Main Scheduler = &mainScheduler{}
-	// Background context
+	// Main runs tasks in order on the same context.
+	Main Scheduler = &mainScheduler{
+		doneWG: sync.WaitGroup{},
+	}
+	// Background context, run tasks in any order
 	Background Scheduler = newBackgroundScheduler()
 )
 
@@ -45,9 +49,13 @@ func (c *immediateScheduler) Schedule(task TaskFunc) {
 	task()
 }
 
-func (c *immediateScheduler) StopWait() {}
+func (c *immediateScheduler) WaitForScheduler() {}
 
 func (c *mainScheduler) Start() {
+	if c == nil {
+		return
+	}
+
 	c.taskQ = NewSyncQueue[TaskFunc]()
 
 	// Main context
@@ -64,11 +72,16 @@ func (c *mainScheduler) Start() {
 			}
 		}
 		logger.Infof("mainScheduler: exit")
+		c.doneWG.Done()
 	}()
 	wg.Wait()
 }
 
 func (c *mainScheduler) Stop() {
+	if c == nil {
+		return
+	}
+	c.doneWG.Add(1)
 	go func() {
 		c.taskQ.Push(func() {
 			c.taskCount--
@@ -76,14 +89,11 @@ func (c *mainScheduler) Stop() {
 	}()
 }
 
-func (c *mainScheduler) StopWait() {
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	c.taskQ.Push(func() {
-		c.taskCount--
-		wg.Done()
-	})
-	wg.Wait()
+func (c *mainScheduler) WaitForScheduler() {
+	if c == nil {
+		return
+	}
+	c.doneWG.Wait()
 }
 
 func (c *mainScheduler) Schedule(task TaskFunc) {
@@ -111,7 +121,7 @@ func (c *backgroundScheduler) Stop() {
 
 }
 
-func (c *backgroundScheduler) StopWait() {
+func (c *backgroundScheduler) WaitForScheduler() {
 	c.lock.Lock()
 	for c.taskCount > 0 {
 		c.signal.Wait()

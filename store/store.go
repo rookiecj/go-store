@@ -22,7 +22,7 @@ type Store[S State] interface {
 	// getState returns the current state of the store.
 	getState() S
 
-	// waitForDispatch waits for all dispatched actions to be processed.
+	// waitForDispatch waits for the dispatcher to stop
 	waitForDispatch()
 }
 
@@ -132,7 +132,8 @@ func (b *baseStore[S]) getState() (state S) {
 }
 
 func (b *baseStore[S]) waitForDispatch() {
-	b.dispatchScheduler.StopWait()
+	//b.dispatchScheduler.Stop()
+	b.dispatchScheduler.WaitForScheduler()
 }
 
 // reduce should be called in the same(Main) context
