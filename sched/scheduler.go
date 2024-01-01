@@ -71,7 +71,7 @@ func (c *mainScheduler) Start() {
 				task()
 			}
 		}
-		logger.Infof("mainScheduler: exit")
+		logger.Infof("mainScheduler: exit remains %d", c.taskQ.Len())
 		c.doneWG.Done()
 	}()
 	wg.Wait()
