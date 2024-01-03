@@ -20,7 +20,7 @@ type setAction struct {
 }
 
 var (
-	testScheduler  = sched.Main
+	testScheduler  = sched.NewMainScheduler()
 	myInitialState = myState{
 		id:    0,
 		value: "",

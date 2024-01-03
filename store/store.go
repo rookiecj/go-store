@@ -31,7 +31,7 @@ type Store[S State] interface {
 	// getState returns the current state of the store.
 	getState() S
 
-	// waitForDispatch waits for the dispatcher to stop
+	// waitForDispatch stops and waits for the dispatcher
 	waitForDispatch()
 }
 
