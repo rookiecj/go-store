@@ -26,11 +26,12 @@ type subscriberEntry[S State] struct {
 	subscriber Subscriber[S]
 }
 
+// NewStore creates a store with a reducer and an initial state.
 func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
-	return NewStoreOn(sched.Immediate, initialState, reducer)
+	return NewStoreOn(sched.NewMainScheduler(), initialState, reducer)
 }
 
-// Scheduler should ensure actions to be reduced in order
+// NewStoreOn Scheduler should ensure actions to be reduced in order
 func NewStoreOn[S State](scheduler sched.Scheduler, initialState S, reducer Reducer[S]) Store[S] {
 	return &baseStore[S]{
 		state:             initialState,
