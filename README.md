@@ -88,7 +88,7 @@ func main() {
 - [X] add README
 - [X] add doc
 - [X] support Main/Background/Dispatch Scheduler(Experimental)
-- [ ] remove explicit scheduler start/stop
+- [X] remove explicit scheduler start/stop
 - [X] add AsyncAction for async work
 - [X] add AddReducer
 - [ ] make getState public for subscribers not to save the state locally 

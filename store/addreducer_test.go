@@ -113,7 +113,6 @@ func Test_baseStore_AddReducer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testScheduler.Start()
 			for _, reducer := range tt.args.reducers {
 				tt.b.AddReducer(reducer)
 			}
@@ -122,7 +121,6 @@ func Test_baseStore_AddReducer(t *testing.T) {
 				tt.b.Dispatch(action)
 			}
 
-			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			got := tt.b.getState()

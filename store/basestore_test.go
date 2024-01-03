@@ -207,13 +207,10 @@ func Test_baseStore_Dispatch(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 
-			testScheduler.Start()
-
 			for _, action := range tt.args.actions {
 				tt.b.Dispatch(action)
 			}
 
-			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			want := tt.want
@@ -265,8 +262,6 @@ func Test_baseStore_ReduceSerialized(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			testScheduler.Start()
-
 			for idx := 0; idx < tt.args.times; idx++ {
 				nth := idx + 1
 				if nth == 1 {
@@ -280,7 +275,6 @@ func Test_baseStore_ReduceSerialized(t *testing.T) {
 				}
 			}
 
-			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			want := tt.want

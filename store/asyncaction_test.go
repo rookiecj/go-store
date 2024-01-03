@@ -108,8 +108,6 @@ func Test_AsyncAction_Run(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			testScheduler.Start()
-
 			setActionCalled := 0
 			tt.b.Subscribe(func(newState myState, oldState myState, action Action) {
 				switch action.(type) {
@@ -130,7 +128,6 @@ func Test_AsyncAction_Run(t *testing.T) {
 			// give time to async action
 			time.Sleep(time.Duration(delay) * time.Millisecond)
 
-			testScheduler.Stop()
 			tt.b.waitForDispatch()
 
 			//diff := time.Now().Sub(start).Milliseconds()

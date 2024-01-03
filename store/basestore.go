@@ -11,12 +11,13 @@ import (
 
 type baseStore[S State] struct {
 	state S
-	// reducer is called in Main context
+	// reducer is called in dispatcher context
 	reducers    []Reducer[S]
 	subscribers []*subscriberEntry[S]
 
 	// reduce and dispatch context
 	dispatchScheduler sched.Scheduler
+	dispatchStarted   bool
 	age               int64
 	dispatchLock      *sync.Mutex
 }
@@ -56,8 +57,23 @@ func (b *baseStore[S]) Dispatch(action Action) {
 	if b == nil {
 		return
 	}
-	// reduce state in Main context
+
+	b.ensureScheduler()
+
+	// reduce state in dispatcher context
 	b.dispatchOn(b.dispatchScheduler, action)
+}
+
+func (b *baseStore[S]) ensureScheduler() {
+	if b == nil {
+		return
+	}
+	b.dispatchLock.Lock()
+	if !b.dispatchStarted {
+		b.dispatchScheduler.Start()
+		b.dispatchStarted = true
+	}
+	b.dispatchLock.Unlock()
 }
 
 // dispatchOn dispatches an action to the store on the scheduler.
@@ -88,6 +104,9 @@ func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
 	if b == nil {
 		return b
 	}
+
+	b.ensureScheduler()
+
 	return b.SubscribeOn(b.dispatchScheduler, subscriber)
 }
 
@@ -124,7 +143,12 @@ func (b *baseStore[S]) getState() (state S) {
 }
 
 func (b *baseStore[S]) waitForDispatch() {
-	//b.dispatchScheduler.Stop()
+	b.dispatchLock.Lock()
+	if b.dispatchStarted {
+		b.dispatchScheduler.Stop()
+	}
+	b.dispatchLock.Unlock()
+
 	b.dispatchScheduler.WaitForScheduler()
 }
 
