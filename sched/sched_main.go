@@ -31,6 +31,8 @@ func (c *mainScheduler) Start() {
 	wg := sync.WaitGroup{}
 
 	wg.Add(1)
+	// WaitForScheduler to wait
+	c.doneWG.Add(1)
 	go func() {
 		wg.Done()
 		logger.Infof("mainScheduler:")
@@ -40,7 +42,10 @@ func (c *mainScheduler) Start() {
 				task()
 			}
 		}
-		logger.Infof("mainScheduler: exit remains %d", c.taskQ.Len())
+		if remains := c.taskQ.Len(); remains != 0 {
+			logger.LogForcedf("mainScheduler: exit remains %d", remains)
+		}
+		logger.Infof("mainScheduler: exit")
 		c.doneWG.Done()
 	}()
 	wg.Wait()
@@ -50,7 +55,6 @@ func (c *mainScheduler) Stop() {
 	if c == nil {
 		return
 	}
-	c.doneWG.Add(1)
 	go func() {
 		c.taskQ.Push(func() {
 			c.taskCount--

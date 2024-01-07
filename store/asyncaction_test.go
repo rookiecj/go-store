@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rookiecj/go-store/logger"
 	"math/rand"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -108,11 +109,11 @@ func Test_AsyncAction_Run(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			setActionCalled := 0
+			var setActionCalled int64
 			tt.b.Subscribe(func(newState myState, oldState myState, action Action) {
 				switch action.(type) {
 				case *setAction:
-					setActionCalled++
+					atomic.AddInt64(&setActionCalled, 1)
 				}
 			})
 
@@ -125,8 +126,8 @@ func Test_AsyncAction_Run(t *testing.T) {
 				tt.b.Dispatch(action)
 			}
 
-			// give time to async action
-			time.Sleep(time.Duration(delay) * time.Millisecond)
+			// give enough(*2) time to async action
+			time.Sleep(time.Duration(delay) * 2 * time.Millisecond)
 
 			tt.b.waitForDispatch()
 
@@ -135,7 +136,7 @@ func Test_AsyncAction_Run(t *testing.T) {
 			//t.Errorf("AsyncAction_Run: want %d, got %d", tt.want, diff)
 			//}
 
-			if setActionCalled != tt.want {
+			if setActionCalled != int64(tt.want) {
 				t.Errorf("AsyncAction_Run: done action call want %d times but %d", tt.want, setActionCalled)
 			}
 

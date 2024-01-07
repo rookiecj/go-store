@@ -17,6 +17,10 @@ func SetLogEnable(enable bool) {
 	logEnabled = enable
 }
 
+func LogForcedf(fmt string, args ...interface{}) {
+	log.Printf(fmt, args...)
+}
+
 func Logf(level string, fmt string, args ...interface{}) {
 	if !logEnabled {
 		return
