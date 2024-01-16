@@ -27,6 +27,17 @@ type subscriberEntry[S State] struct {
 	subscriber Subscriber[S]
 }
 
+type baseDisposer struct {
+	dispose func()
+}
+
+func (b *baseDisposer) Dispose() {
+	if b == nil {
+		return
+	}
+	b.dispose()
+}
+
 // NewStore creates a store with a reducer and an initial state.
 func NewStore[S State](initialState S, reducer Reducer[S]) Store[S] {
 	return NewStoreOn(sched.NewMainScheduler(), initialState, reducer)
@@ -100,9 +111,9 @@ func (b *baseStore[S]) dispatchOn(scheduler sched.Scheduler, action Action) {
 	}
 }
 
-func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
+func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Disposer {
 	if b == nil {
-		return b
+		return nil
 	}
 
 	b.ensureScheduler()
@@ -110,9 +121,9 @@ func (b *baseStore[S]) Subscribe(subscriber Subscriber[S]) Store[S] {
 	return b.SubscribeOn(b.dispatchScheduler, subscriber)
 }
 
-func (b *baseStore[S]) SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Store[S] {
+func (b *baseStore[S]) SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Disposer {
 	if b == nil {
-		return b
+		return nil
 	}
 
 	if len(b.subscribers) == 0 {
@@ -132,7 +143,19 @@ func (b *baseStore[S]) SubscribeOn(scheduler sched.Scheduler, subscriber Subscri
 
 	b.subscribers = append(b.subscribers, &entry)
 
-	return b
+	return &baseDisposer{
+		dispose: func() {
+			b.dispatchLock.Lock()
+			for idx := 0; idx < len(b.subscribers); idx++ {
+				if &entry == b.subscribers[idx] {
+					b.subscribers = append(b.subscribers[:idx], b.subscribers[idx+1:]...)
+					break
+				}
+			}
+			b.dispatchLock.Unlock()
+			// need notify?
+		},
+	}
 }
 
 func (b *baseStore[S]) getState() (state S) {

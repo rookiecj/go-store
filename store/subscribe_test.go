@@ -355,3 +355,107 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 		})
 	}
 }
+
+func Test_baseStore_Subscribe_Dispose(t *testing.T) {
+
+	type args[S State] struct {
+		action      Action
+		actions     int // actions to dispatch
+		subscribers int // subscribers to add
+		dispose     int
+	}
+	type testCaseSubscribe[S State] struct {
+		name   string
+		b      Store[S]
+		args   args[S]
+		called int // temporal variable for a testcase
+		want   int // subscriber count
+	}
+	tests := []testCaseSubscribe[myState]{
+		{
+			name: "action 0 - subscriber 1 - dispose 1",
+			b:    newMyStateStore(),
+			args: args[myState]{
+				action:      nil,
+				actions:     0,
+				subscribers: 1,
+				dispose:     1,
+			},
+			called: 0,
+			want:   0,
+		},
+
+		{
+			name: "action 1 - subscriber 1 - dispose 1",
+			b:    newMyStateStore(),
+			args: args[myState]{
+				action:      &addAction{"1"},
+				actions:     1,
+				subscribers: 1,
+				dispose:     1,
+			},
+			called: 0,
+			want:   0,
+		},
+		{
+			name: "action 1 - subscriber 2 - dispose 1",
+			b:    newMyStateStore(),
+			args: args[myState]{
+				action:      &addAction{"12"},
+				actions:     1,
+				subscribers: 2,
+				dispose:     1,
+			},
+			called: 0,
+			want:   1,
+		},
+		{
+			name: "action 2 - subscriber 2 - dispose 2",
+			b:    newMyStateStore(),
+			args: args[myState]{
+				action:      &addAction{"22"},
+				actions:     2,
+				subscribers: 2,
+				dispose:     2,
+			},
+			called: 0,
+			want:   0,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+
+			log.Println("Subscriber: subscribers:", tt.args.subscribers)
+			var disposeBag []Disposer
+			for idx := 0; idx < tt.args.subscribers; idx++ {
+				idxdup := idx
+				disposer := tt.b.Subscribe(func(state myState, old myState, action Action) {
+					tt.called++
+					log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
+				})
+				disposeBag = append(disposeBag, disposer)
+			}
+
+			log.Printf("Dispatch: actions: %d, action=%v", tt.args.actions, tt.args.action)
+			for idx := 0; idx < tt.args.actions; idx++ {
+				log.Printf("Dispatch: idx:%d action", idx)
+				tt.b.Dispatch(tt.args.action)
+			}
+
+			for idx, disposer := range disposeBag {
+				if idx < tt.args.dispose {
+					log.Printf("Dispose: idx:%d", idx)
+					disposer.Dispose()
+				}
+			}
+
+			tt.b.waitForDispatch()
+
+			got := len(tt.b.(*baseStore[myState]).subscribers)
+			if tt.want != got {
+				t.Errorf("Dispose: subscribers want %d, got %d", tt.want, got)
+			}
+		})
+	}
+}
