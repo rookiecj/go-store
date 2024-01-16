@@ -85,7 +85,7 @@ func (b *baseStore[S]) dispatchOn(scheduler sched.Scheduler, action Action) {
 	case AsyncAction:
 		scheduler.Schedule(func() {
 			asyncAction := action.(AsyncAction)
-			asyncAction.Run(b)
+			asyncAction(b)
 		})
 	default:
 		scheduler.Schedule(func() {
