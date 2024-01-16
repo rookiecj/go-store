@@ -9,21 +9,15 @@ import (
 	"time"
 )
 
-type testAsyncAction struct {
-	work int
-	run  func(work int, dispatcher Dispatcher)
-}
-
-func (c *testAsyncAction) ActionInterface() {}
-func (c *testAsyncAction) Run(dispatcher Dispatcher) {
-	// do async work
-	c.run(c.work, dispatcher)
+type testAsyncArgs struct {
+	work   int
+	action AsyncAction
 }
 
 func Test_AsyncAction_Run(t *testing.T) {
 
 	type args struct {
-		actions []AsyncAction
+		asyncArgs []testAsyncArgs
 	}
 	type testCaseAsyncActionRun[S State] struct {
 		name      string
@@ -37,15 +31,16 @@ func Test_AsyncAction_Run(t *testing.T) {
 
 	tests := []testCaseAsyncActionRun[myState]{
 		{
-			name: "add testAsyncAction - delay 100ms",
+			name: "add testAsyncArgs - delay 100ms",
 			b:    newMyStateStore(),
 			args: args{
-				actions: []AsyncAction{
-					&testAsyncAction{
-						work: 100, // 100 millis
-						run: func(work int, dispatcher Dispatcher) {
-
+				asyncArgs: []testAsyncArgs{
+					{
+						work: 100,
+						action: func(dispatcher Dispatcher) {
 							// do async work
+							// and dispatch event
+							work := 100
 							go func() {
 								delay := rand.Intn(work)
 								time.Sleep(time.Duration(delay) * time.Millisecond)
@@ -66,12 +61,13 @@ func Test_AsyncAction_Run(t *testing.T) {
 			name: "two async action - got later state",
 			b:    newMyStateStore(),
 			args: args{
-				actions: []AsyncAction{
-					&testAsyncAction{
-						work: 100, // 100 millis
-						run: func(work int, dispatcher Dispatcher) {
-
+				asyncArgs: []testAsyncArgs{
+					{
+						work: 100,
+						action: func(dispatcher Dispatcher) {
 							// do async work
+							// and dispatch event
+							work := 100
 							go func() {
 								logger.Infof("first async job %d", work)
 								time.Sleep(time.Duration(work) * time.Millisecond)
@@ -83,11 +79,13 @@ func Test_AsyncAction_Run(t *testing.T) {
 							}()
 						},
 					},
-					&testAsyncAction{
-						work: 50, // 50 millis
-						run: func(work int, dispatcher Dispatcher) {
 
+					{
+						work: 50,
+						action: func(dispatcher Dispatcher) {
 							// do async work
+							// and dispatch event
+							work := 50
 							go func() {
 								logger.Infof("second async job %d", work)
 								time.Sleep(time.Duration(work) * time.Millisecond)
@@ -119,11 +117,11 @@ func Test_AsyncAction_Run(t *testing.T) {
 
 			//start := time.Now()
 			delay := 0
-			for _, action := range tt.args.actions {
-				if delay < action.(*testAsyncAction).work {
-					delay = action.(*testAsyncAction).work
+			for _, asyncArg := range tt.args.asyncArgs {
+				if delay < asyncArg.work {
+					delay = asyncArg.work
 				}
-				tt.b.Dispatch(action)
+				tt.b.Dispatch(asyncArg.action)
 			}
 
 			// give enough(*2) time to async action
