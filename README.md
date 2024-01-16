@@ -90,6 +90,7 @@ func main() {
 - [X] remove explicit scheduler start/stop
 - [X] add AsyncAction for async work
 - [X] add AddReducer
+- [X] Disposer for unsubscribe from store
 - [ ] make getState public for subscribers not to save the state locally 
 - [ ] add State history
 - [ ] make age precisely
