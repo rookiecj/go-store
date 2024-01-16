@@ -38,7 +38,6 @@ type addAction struct {
 }
 
 func (c myState) StateInterface()     {}
-func (c *addAction) ActionInterface() {}
 
 func main() {
     
