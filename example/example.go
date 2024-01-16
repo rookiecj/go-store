@@ -16,8 +16,7 @@ type addAction struct {
 	value string
 }
 
-func (c myState) StateInterface()     {}
-func (c *addAction) ActionInterface() {}
+func (c myState) StateInterface() {}
 
 func main() {
 

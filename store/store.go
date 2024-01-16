@@ -22,11 +22,11 @@ type Store[S State] interface {
 
 	// Subscribe adds a subscriber to the store.
 	// subscribers are notified when the state changes.
-	Subscribe(subscriber Subscriber[S]) Store[S]
+	Subscribe(subscriber Subscriber[S]) Disposer
 
 	// SubscribeOn adds a subscriber to the store.
 	// when the state changes, subscribers are notified on the scheduler.
-	SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Store[S]
+	SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Disposer
 
 	// getState returns the current state of the store.
 	getState() S
@@ -46,3 +46,7 @@ type Reducer[S State] func(state S, action Action) (S, error)
 
 // Subscriber is notified when the state changes.
 type Subscriber[S State] func(newState S, oldState S, action Action)
+
+type Disposer interface {
+	Dispose()
+}

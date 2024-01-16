@@ -1,17 +1,11 @@
 package store
 
 // Action triggers a state change.
-type Action interface {
-	ActionInterface()
-}
+type Action any
 
 // AsyncAction provides a way to dispatch actions asynchronously.
-type AsyncAction interface {
-	Action
-
-	// Run is called with Dispatcher which can be used to dispatch actions.
-	Run(Dispatcher)
-}
+// It is called with Dispatcher which can be used to dispatch actions.
+type AsyncAction func(Dispatcher)
 
 // Dispatcher dispatches an action.
 type Dispatcher interface {
@@ -21,17 +15,12 @@ type Dispatcher interface {
 }
 
 var (
-	// InitAction is dispatched when to initialise the store or a subscriber subscribes
 	InitAction = &initAction{}
 )
 
-type initAction struct {
-}
+// InitAction is dispatched when to initialise the store or a subscriber subscribes
+type initAction struct{}
 
 type ResetAction[S State] struct {
 	state S
 }
-
-func (c *initAction) ActionInterface() {}
-
-func (*ResetAction[S]) ActionInterface() {}
