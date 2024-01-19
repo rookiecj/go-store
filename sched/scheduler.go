@@ -5,20 +5,30 @@ type TaskFunc func()
 // Scheduler schedules tasks
 type Scheduler interface {
 	// Start starts the scheduler
-	Start()
+	start()
+
 	// Schedule schedules a task
-	Schedule(task TaskFunc)
-	// Stop stops the scheduler
+	Schedule(task TaskFunc) error
+
+	// idle -> close model
+
+	// WaitForIdle waits for idle
+	WaitForIdle()
+	// Close scheduler
+	//Close()
+
+	// stop -> wait model
+
+	// Stop request scheduler to stop
 	Stop()
-	// WaitForScheduler waits for the scheduler to stop
+	// WaitForScheduler waits for stopping scheduler
 	WaitForScheduler()
 }
 
 var (
 	// Immediate runs tasks immediately, no schedule
 	Immediate = newImmScheduler()
-	// Main runs tasks on the same context in order which is arrived. It is shared across all stores.
-	Main = NewMainScheduler()
+	Main      = NewMainScheduler()
 	// Background context, run tasks in any order
 	Background = newBackgroundScheduler()
 )

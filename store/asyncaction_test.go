@@ -107,7 +107,9 @@ func Test_AsyncAction_Run(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+
 			var setActionCalled int64
+
 			tt.b.Subscribe(func(newState myState, oldState myState, action Action) {
 				switch action.(type) {
 				case *setAction:
@@ -127,7 +129,8 @@ func Test_AsyncAction_Run(t *testing.T) {
 			// give enough(*2) time to async action
 			time.Sleep(time.Duration(delay) * 2 * time.Millisecond)
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			//diff := time.Now().Sub(start).Milliseconds()
 			//if diff >= tt.want {

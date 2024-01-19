@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/rookiecj/go-store/logger"
 	"github.com/rookiecj/go-store/sched"
 	"log"
 	"sync/atomic"
@@ -98,7 +99,8 @@ func Test_baseStore_Subscribe(t *testing.T) {
 				tt.b.Dispatch(tt.args.action)
 			}
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			if tt.want != tt.called {
 				t.Errorf("Subscribe: want %d, got %d, state %v, action %v", tt.want, tt.called, tt.b.getState(), tt.args.action)
@@ -110,6 +112,7 @@ func Test_baseStore_Subscribe(t *testing.T) {
 func Test_baseStore_SubscribeOn(t *testing.T) {
 
 	type args[S State] struct {
+		// subscriber scheduler
 		scheduler   sched.Scheduler
 		action      Action
 		actions     int64 // actions to dispatch
@@ -125,6 +128,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 
 	var actionLimit int64 = 16
 	var subscriberlimit int64 = 64
+	subscriberScheduler := sched.Background
 
 	tests := []testCaseSubscribeOn[myState]{
 		{
@@ -143,7 +147,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 0 - subscriber 1 - callback when subscribe",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      nil,
 				actions:     0,
 				subscribers: 1,
@@ -155,7 +159,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 0 - subscriber 1",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      nil,
 				actions:     0,
 				subscribers: 1,
@@ -167,7 +171,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 1 - subscriber 1",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      &addAction{"1"},
 				actions:     1,
 				subscribers: 1,
@@ -179,7 +183,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 1 - subscriber 2",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      &addAction{"12"},
 				actions:     1,
 				subscribers: 2,
@@ -191,7 +195,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 2 - subscriber 2",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      &addAction{"22"},
 				actions:     2,
 				subscribers: 2,
@@ -204,7 +208,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action 2 - subscriber many",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      &addAction{"2x"},
 				actions:     2,
 				subscribers: subscriberlimit,
@@ -217,7 +221,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action many - subscriber 2",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      &addAction{"X2"},
 				actions:     actionLimit,
 				subscribers: 2,
@@ -229,7 +233,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 			name: "background - action many - subscriber many",
 			b:    newMyStateStore(),
 			args: args[myState]{
-				scheduler:   sched.Background,
+				scheduler:   subscriberScheduler,
 				action:      nil,
 				actions:     actionLimit,
 				subscribers: subscriberlimit,
@@ -239,7 +243,7 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 		},
 	}
 
-	//logger.SetLogEnable(true)
+	logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt
@@ -247,17 +251,18 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 
 			log.Println("Subscriber: subscribers:", tt.args.subscribers)
 			for idx := int64(0); idx < tt.args.subscribers; idx++ {
-				//idxdup := idx
+				idxdup := idx
+
 				tt.b.SubscribeOn(tt.args.scheduler, func(state myState, old myState, action Action) {
 					atomic.AddInt64(&tt.called, 1)
-					//log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
+					log.Printf("Subscriber %d: got called: %d state:%v\n", idxdup, tt.called, state)
 				})
 			}
 
-			log.Printf("Dispatch: actions: %d, action=%v", tt.args.actions, tt.args.action)
+			log.Printf("Dispatch: actions: %d\n", tt.args.actions)
 			for idx := int64(0); idx < tt.args.actions; idx++ {
 				idx := idx
-				log.Printf("Dispatch: idx:%d action", idx)
+				log.Printf("Dispatch: %d action: %v\n", idx, tt.args.action)
 				if tt.args.action != nil {
 					tt.b.Dispatch(tt.args.action)
 				} else {
@@ -267,7 +272,13 @@ func Test_baseStore_SubscribeOn(t *testing.T) {
 				}
 			}
 
-			tt.b.waitForDispatch()
+			// subscriber scheduler
+			subscriberScheduler.Stop()
+			subscriberScheduler.WaitForScheduler()
+
+			// store scheduler
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			if tt.want != tt.called {
 				t.Errorf("SubscribeOn: want %d, got %d, state %v, action %v", tt.want, tt.called, tt.b.getState(), tt.args.action)
@@ -337,7 +348,8 @@ func Test_baseStore_SubscriberDispatchSerialized(t *testing.T) {
 				})
 			}
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			if tt.want != tt.called {
 				t.Errorf("SubscribeOn: want %d, got %d, state %v, action %v", tt.want, tt.called, tt.b.getState(), tt.args.action)
@@ -450,7 +462,8 @@ func Test_baseStore_Subscribe_Dispose(t *testing.T) {
 				}
 			}
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			got := len(tt.b.(*baseStore[myState]).subscribers)
 			if tt.want != got {
