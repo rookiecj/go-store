@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/rookiecj/go-store/logger"
 	"reflect"
 	"strings"
 	"testing"
@@ -12,12 +13,11 @@ func Test_Store_example(t *testing.T) {
 	t.Run("example", func(t *testing.T) {
 		initialState := myState{}
 		reducer := func(state myState, action Action) (myState, error) {
-			switch action.(type) {
+			switch reified := action.(type) {
 			case *addAction:
-				reifiedAction := action.(*addAction)
 				return myState{
 					id:    state.id,
-					value: state.value + reifiedAction.value,
+					value: state.value + reified.value,
 				}, nil
 			}
 			return initialState, nil
@@ -43,9 +43,8 @@ func Test_Store_example(t *testing.T) {
 			value: "3",
 		})
 
-		// only for testing
-		// wait for dispatching
-		store.waitForDispatch()
+		store.Stop()
+		store.WaitForStore()
 	})
 }
 
@@ -127,9 +126,13 @@ func Test_baseStore_getState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
 			if got := tt.b.getState(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getState() = %v, want %v", got, tt.want)
 			}
+
+			tt.b.Stop()
+			tt.b.WaitForStore()
 		})
 	}
 }
@@ -201,17 +204,17 @@ func Test_baseStore_Dispatch(t *testing.T) {
 		},
 	}
 
-	//logger.SetLogEnable(true)
+	logger.SetLogEnable(true)
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-
 			for _, action := range tt.args.actions {
 				tt.b.Dispatch(action)
 			}
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			want := tt.want
 			got := tt.b.getState()
@@ -259,6 +262,8 @@ func Test_baseStore_ReduceSerialized(t *testing.T) {
 		},
 	}
 
+	logger.SetLogEnable(true)
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
@@ -275,7 +280,8 @@ func Test_baseStore_ReduceSerialized(t *testing.T) {
 				}
 			}
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			want := tt.want
 			got := tt.b.getState()

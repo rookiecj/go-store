@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+var ErrNoItem = errors.New("no items")
+
 type SyncQueue[T any] interface {
 	Push(item T)
 	Pop() (T, error)
@@ -20,10 +22,10 @@ type syncQueue[T any] struct {
 }
 
 func NewSyncQueue[T any]() SyncQueue[T] {
-	lock := sync.Mutex{}
+	lock := &sync.Mutex{}
 	q := syncQueue[T]{
-		lock:   &lock,               // ptr
-		signal: sync.NewCond(&lock), // ptr
+		lock:   lock,               // ptr
+		signal: sync.NewCond(lock), // ptr
 	}
 	return &q
 }
@@ -44,7 +46,7 @@ func (s *syncQueue[T]) Pop() (item T, err error) {
 		return
 	}
 	s.lock.Lock()
-	for s.Len() == 0 {
+	for len(s.items) == 0 {
 		s.signal.Wait()
 	}
 	item = s.items[0]
@@ -60,8 +62,8 @@ func (s *syncQueue[T]) Peek() (item T, err error) {
 	}
 
 	s.lock.Lock()
-	if s.Len() == 0 {
-		err = errors.New("no items")
+	if len(s.items) == 0 {
+		err = ErrNoItem
 		s.lock.Unlock()
 		return
 	}
@@ -74,5 +76,8 @@ func (s *syncQueue[T]) Len() int {
 	if s == nil {
 		return 0
 	}
-	return len(s.items)
+	s.lock.Lock()
+	size := len(s.items)
+	s.lock.Unlock()
+	return size
 }

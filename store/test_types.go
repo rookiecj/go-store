@@ -20,26 +20,18 @@ type setAction struct {
 }
 
 var (
-	testScheduler  = sched.NewMainScheduler() // sched.Main
 	myInitialState = myState{
 		id:    0,
 		value: "",
 	}
 )
 
-func (c myState) StateInterface()     {}
-func (c *addAction) ActionInterface() {}
-func (c *setAction) ActionInterface() {}
+func (c myState) StateInterface() {}
 
 // new store with testScheduler and myStateReducer
 func newMyStateStore() Store[myState] {
-	return newMyStateStoreWithReducer(myStateReducer)
-}
-
-func newMyStateStoreWithReducer(reducer Reducer[myState]) Store[myState] {
-	// test on Immediate scheduler
-	return NewStoreOn(testScheduler, myInitialState, reducer)
-	//return NewStore(myInitialState, reducer)
+	testScheduler := sched.NewMainScheduler()
+	return NewStoreOn(testScheduler, myInitialState, myStateReducer)
 }
 
 func myStateReducer(state myState, action Action) (myState, error) {
@@ -47,12 +39,11 @@ func myStateReducer(state myState, action Action) (myState, error) {
 	if action == nil {
 		return state, nil
 	}
-	switch action.(type) {
+	switch reified := action.(type) {
 	case *addAction:
-		reifiedAction := action.(*addAction)
 		return myState{
 			id:    state.id,
-			value: state.value + reifiedAction.value,
+			value: state.value + reified.value,
 		}, nil
 	case *setAction:
 		reifiedAction := action.(*setAction)

@@ -61,12 +61,12 @@ func Test_mainScheduler_Schedule(t *testing.T) {
 			c := tt.s
 
 			sharedVariableWithNoLock = 0
-			c.Start()
 
 			for idx := 0; idx < tt.args.concurrent; idx++ {
 				c.Schedule(tt.args.task)
 			}
 
+			//c.WaitForIdle()
 			c.Stop()
 			c.WaitForScheduler()
 
