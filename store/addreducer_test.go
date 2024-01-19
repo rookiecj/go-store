@@ -10,7 +10,7 @@ type setAndSkipAction struct {
 	skip  bool
 }
 
-func (c *setAndSkipAction) ActionInterface() {}
+//func (c *setAndSkipAction) ActionInterface() {}
 
 func Test_baseStore_AddReducer(t *testing.T) {
 	type args[S State] struct {
@@ -29,16 +29,15 @@ func Test_baseStore_AddReducer(t *testing.T) {
 		if action == nil {
 			return state, nil
 		}
-		switch action.(type) {
+		switch reified := action.(type) {
 		case *setAndSkipAction:
-			reifiedAction := action.(*setAndSkipAction)
 			var err error
-			if reifiedAction.skip {
+			if reified.skip {
 				err = ErrSkipReducing
 			}
 			return myState{
 				id:    state.id,
-				value: "first: " + reifiedAction.value,
+				value: "first: " + reified.value,
 			}, err
 		}
 		return state, nil
@@ -49,12 +48,11 @@ func Test_baseStore_AddReducer(t *testing.T) {
 		if action == nil {
 			return state, nil
 		}
-		switch action.(type) {
+		switch reified := action.(type) {
 		case *setAction:
-			reifiedAction := action.(*setAction)
 			return myState{
 				id:    state.id,
-				value: "second: " + reifiedAction.value,
+				value: "second: " + reified.value,
 			}, nil
 		}
 		return state, nil
@@ -111,6 +109,7 @@ func Test_baseStore_AddReducer(t *testing.T) {
 			want: "first: 2",
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			for _, reducer := range tt.args.reducers {
@@ -121,7 +120,8 @@ func Test_baseStore_AddReducer(t *testing.T) {
 				tt.b.Dispatch(action)
 			}
 
-			tt.b.waitForDispatch()
+			tt.b.Stop()
+			tt.b.WaitForStore()
 
 			got := tt.b.getState()
 			if !reflect.DeepEqual(tt.want, got.value) {

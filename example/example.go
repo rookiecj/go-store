@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/rookiecj/go-store/store"
 )
 
@@ -22,12 +20,11 @@ func main() {
 
 	initialState := myState{}
 	reducer := func(state myState, action store.Action) (myState, error) {
-		switch action.(type) {
+		switch reified := action.(type) {
 		case *addAction:
-			reifiedAction := action.(*addAction)
 			return myState{
 				id:    state.id,
-				value: state.value + reifiedAction.value,
+				value: state.value + reified.value,
 			}, nil
 		}
 		return state, nil
@@ -53,6 +50,6 @@ func main() {
 		value: "3",
 	})
 
-	// store.waitForDispatch()
-	time.Sleep(100 * time.Millisecond)
+	stateStore.Stop()
+	stateStore.WaitForStore()
 }

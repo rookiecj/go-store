@@ -14,13 +14,13 @@ type Dispatcher interface {
 	Dispatch(Action)
 }
 
-var (
-	InitAction = &initAction{}
-)
-
 // InitAction is dispatched when to initialise the store or a subscriber subscribes
-type initAction struct{}
+type InitAction struct{}
 
+// 상태에 변화를 주지않는 action
+type UnitAction struct{}
+
+// 상태를 Init 상태로 되돌리는 action
 type ResetAction[S State] struct {
 	state S
 }
