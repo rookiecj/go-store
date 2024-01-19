@@ -28,11 +28,22 @@ type Store[S State] interface {
 	// when the state changes, subscribers are notified on the scheduler.
 	SubscribeOn(scheduler sched.Scheduler, subscriber Subscriber[S]) Disposer
 
+	//// idle -> close model
+	//// WaitForIdle waits for idle
+	//WaitForIdle()
+	//// Close closes the store
+	//Close()
+
+	// stop -> wait model
+
+	// Stop stops the store
+	Stop()
+
+	// WaitForStore waits for the store to stop, optionally can wait the store
+	WaitForStore()
+
 	// getState returns the current state of the store.
 	getState() S
-
-	// waitForDispatch stops and waits for the dispatcher
-	waitForDispatch()
 }
 
 // State is value class

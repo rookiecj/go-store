@@ -73,9 +73,9 @@ func main() {
     stateStore.Dispatch(&addAction{
         value: "3",
 	})
-    
-    // store.waitForDispatch()
-    time.Sleep(100 * time.Millisecond)
+
+    stateStore.Close()
+    stateStore.WaitForStore()
 }
 
 ```

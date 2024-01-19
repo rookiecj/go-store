@@ -9,8 +9,9 @@ tidy:  ## update deps
 build: ## build
 	go build $(shell go list ./... | grep -v /example)
 
-lint:	## lint
-	go vet ./...
+lint:	## static analysis
+	@go fmt $(shell go list ./...)
+	@go vet $(shell go list ./...)
 
 clean: 	## clean
 	-rm store.test
@@ -32,3 +33,6 @@ bench-mem: clean	## test bench with memory usage
 coverage:	## test with coverage
 	#go test --converage ./store/...
 	go test -coverprofile=coverage.txt -covermode=atomic -v -count=1 -timeout=30s -parallel=4 -failfast $(shell go list ./... | grep -v /example)
+
+prof:
+	go test -cpuprofile cpu.prof -memprofile mem.prof -bench example/perf.main.go
