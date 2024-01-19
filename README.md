@@ -43,13 +43,12 @@ func main() {
     
     initialState := myState{}
     reducer := func(state myState, action store.Action) (myState, error) {
-        switch action.(type) {
+        switch reified := action.(type) {
             case *addAction:
-                reifiedAction := action.(*addAction)
-                return myState{
+            return myState{
                 id:    state.id,
-                value: state.value + reifiedAction.value,
-            }, nil
+                value: state.value + reified.value,
+                }, nil
         }
         return state, nil
     }
@@ -73,9 +72,9 @@ func main() {
     stateStore.Dispatch(&addAction{
         value: "3",
 	})
-    
-    // store.waitForDispatch()
-    time.Sleep(100 * time.Millisecond)
+
+    stateStore.Stop()
+    stateStore.WaitForStore()
 }
 
 ```
